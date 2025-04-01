@@ -91,7 +91,7 @@
         } else if (message.toLowerCase().includes('deploy')) {
           response = 'Deploying smart contracts is easy with SmartForge.ai. You can deploy directly from chat or using your wallet.';
         } else if (message.toLowerCase().includes('speed') || message.toLowerCase().includes('fast')) {
-          response = 'SmartForge.ai helps you skip the boilerplate and deploy smart contracts in seconds, saving you time and effort.';
+          response = 'CoffeeCoders.ai helps you skip the boilerplate and deploy smart contracts in seconds, saving you time and effort.';
         } else {
           response = 'I understand. Tell me more about what you\'re looking to build with smart contracts?';
         }
@@ -114,7 +114,7 @@
    * 4. Install any required libraries (fetch or axios for API requests)
    */
   
-  /*
+  
   // Function to handle sending a message with AI integration
   async function sendMessageWithAI() {
     const chatInput = document.getElementById('chatInput');
@@ -149,7 +149,7 @@
             messages: [
               {
                 role: 'system', 
-                content: 'You are SmartForge.ai, an AI assistant specialized in helping users generate and deploy smart contracts. ' +
+                content: 'You are Coffee_coders.ai, an AI assistant specialized in helping users generate and deploy smart contracts. ' +
                          'You provide concise, technical, and helpful responses about blockchain, cryptocurrency, and smart contract development. ' +
                          'Always remain factual and offer solutions to user queries related to smart contract development.'
               },
@@ -180,7 +180,7 @@
       }
     }
   }
-  */
+  
   
   // Chat input functionality
   const chatInput = document.getElementById('chatInput');
@@ -199,12 +199,27 @@
     });
   }
 
-  // Connect wallet button (non-functional in MVP)
+  // Connect wallet button
   const connectWalletButton = document.querySelector('.cta-button');
   if (connectWalletButton) {
-    connectWalletButton.addEventListener('click', function() {
-      console.log('Connect wallet clicked!');
-      alert('Wallet connection feature coming soon!');
+    connectWalletButton.addEventListener('click', async function() {
+      if (typeof window.ethereum !== 'undefined') {
+        try {
+          // Request account access
+          const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+          const account = accounts[0];
+          console.log('Connected account:', account);
+          alert(`Connected to wallet: ${account}`);
+          
+          // Optionally, display the account on the UI
+          // You can add code here to update the UI with the connected account
+        } catch (error) {
+          console.error('User denied account access:', error);
+          alert('Please allow access to your wallet to connect.');
+        }
+      } else {
+        alert('MetaMask is not installed. Please install it to connect your wallet.');
+      }
     });
   }
 })();
