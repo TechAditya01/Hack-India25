@@ -11,14 +11,14 @@ def generate_contract(request):
     try:
         # 1. Get the contract description from the request data
         data = json.loads(request.body)
-        description = data.get('description', '')
+        description = data.get('description', '')#need to be generated from another gemini api based on the prompt by user
 
         # 2. Construct the Gemini API URL and headers
         gemini_api_key = os.environ.get('GEMINI_API_KEY')
         if not gemini_api_key:
             raise ValueError('Gemini API key not found in environment variables.')
 
-        url = "https://api.generativeai.google.com/v1beta2/models/gemini-pro:generateText"  # Replace with correct Gemini endpoint
+        url = "https://api.generativeai.google.com/v1beta2/models/gemini-pro:generateText?response_format=json"
         headers = {
             'Authorization': f'Bearer {gemini_api_key}',
             'Content-Type': 'application/json'
@@ -31,7 +31,7 @@ def generate_contract(request):
                 "text": description
             },
             "temperature": 0.7,
-            "max_output_tokens": 512,
+            "max_output_tokens": 8196,
             "top_p": 0.95,
             "top_k": 40
         }
