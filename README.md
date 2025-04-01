@@ -16,7 +16,7 @@ This project is a Minimum Viable Product (MVP) for generating Solidity smart con
 
 ### Prerequisites
 
-* Python 3.7+
+* Python 3.9+
 * Django 4.0+
 * `requests` library (install with `pip install requests`)
 * A Google Cloud Project with the Gemini API enabled.

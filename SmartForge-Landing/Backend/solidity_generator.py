@@ -1,124 +1,53 @@
 import os
-import json
-import requests
-import logging
-from datetime import datetime
-from typing import Dict, Any, Optional
+import openai
 
-from django.http import JsonResponse
-from django.views.decorators.http import require_POST
-from agno_solidity_agent import SolidityCodeAgent
+# Set your Gemini API key
+openai.api_key = os.environ.get("GOOGLE_API_KEY") # or replace with your actual key
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
-# Initialize AGNO agent
-solidity_agent = SolidityCodeAgent()
+def generate_code(prompt, language="python", max_tokens=200, temperature=0.5):
+  """
+  Generates code using the Gemini API.
 
-@require_POST
-def generate_contract(request):
-    try:
-        # 1. Get the contract description from the request data
-        data = json.loads(request.body)
-        description = data.get('description', '')
-        contract_name = data.get('contract_name', f'Contract_{datetime.now().strftime("%Y%m%d_%H%M%S")}')
+  Args:
+    prompt: The prompt describing the code to generate.  Be specific!
+    language: The programming language for the generated code.
+    max_tokens: The maximum number of tokens (words/characters) in the generated code.
+    temperature: Controls the randomness of the generated code (0.0 - deterministic, 1.0 - very random).
 
-        if not description:
-            return JsonResponse({
-                'success': False,
-                'error': 'No contract description provided'
-            }, status=400)
+  Returns:
+    The generated code as a string.  Returns an error message if the API call fails.
+  """
+  try:
+    response = openai.Completion.create(
+      model="text-bison-001", # or other Gemini models as they become available
+      prompt=f"```{language}\n{prompt}\n```", #Gemini likes prompts formatted in this way
+      max_tokens=max_tokens,
+      temperature=temperature,
+      top_p=1, #Nucleus Sampling:  Alternative to temperature to control randomness
+      frequency_penalty=0,
+      presence_penalty=0
+    )
 
-        # 2. First, use Gemini to process and enhance the natural language description
-        gemini_api_key = os.environ.get('GEMINI_API_KEY')
-        if not gemini_api_key:
-            raise ValueError('Gemini API key not found in environment variables.')
+    generated_code = response.choices[0].text.strip()
+    return generated_code
 
-        # 3. Construct Gemini API request for natural language processing
-        gemini_url = "https://api.generativeai.google.com/v1beta2/models/gemini-pro:generateText?response_format=json"
-        gemini_headers = {
-            'Authorization': f'Bearer {gemini_api_key}',
-            'Content-Type': 'application/json'
-        }
+  except openai.error.OpenAIError as e:
+      return f"Error generating code: {e}"
 
-        # 4. Create a structured prompt for Gemini
-        gemini_prompt = f"""
-        Analyze the following smart contract description and enhance it with:
-        1. Security considerations
-        2. Gas optimization suggestions
-        3. Best practices
-        4. Required OpenZeppelin contracts
-        5. Event definitions
-        
-        Description: {description}
-        
-        Provide the enhanced description in a structured format.
-        """
 
-        gemini_payload = {
-            "prompt": {
-                "text": gemini_prompt
-            },
-            "temperature": 0.2,
-            "max_output_tokens": 4096,
-            "top_p": 0.95,
-            "top_k": 40
-        }
+if __name__ == "__main__":
+    # Example usage: generate Python code for a simple function
+    user_prompt = input("Describe the code you want to generate: ")
+    generated_code = generate_code(user_prompt)
 
-        # 5. Make the Gemini API request
-        gemini_response = requests.post(gemini_url, headers=gemini_headers, json=gemini_payload)
-        
-        if gemini_response.status_code != 200:
-            logger.error(f"Gemini API error: {gemini_response.status_code} - {gemini_response.text}")
-            return JsonResponse({
-                'success': False,
-                'error': 'Error processing contract description with Gemini API.'
-            }, status=500)
+    print("\nGenerated Code:")
+    print(generated_code)
 
-        # 6. Extract the enhanced description from Gemini
-        gemini_data = gemini_response.json()
-        enhanced_description = gemini_data['candidates'][0]['output']
-
-        # 7. Use AGNO agent to generate the actual Solidity code
-        agno_result = solidity_agent.generate_contract(enhanced_description, contract_name)
-        
-        if agno_result['status'] != 'success':
-            logger.error(f"AGNO generation error: {agno_result.get('error', 'Unknown error')}")
-            return JsonResponse({
-                'success': False,
-                'error': 'Error generating Solidity code with AGNO.'
-            }, status=500)
-
-        # 8. Validate the generated code
-        validation_result = solidity_agent.validate_code(agno_result['code'])
-
-        # 9. Prepare the response
-        response_data = {
-            'success': True,
-            'message': 'Contract generated successfully',
-            'contract': {
-                'name': contract_name,
-                'code': agno_result['code'],
-                'test_file': agno_result['test_file'],
-                'deployment_script': agno_result['deployment_script'],
-                'metadata': agno_result['metadata'],
-                'validation': validation_result,
-                'enhanced_description': enhanced_description
-            }
-        }
-
-        return JsonResponse(response_data)
-
-    except ValueError as e:
-        logger.error(f"Configuration error: {str(e)}")
-        return JsonResponse({
-            'success': False,
-            'error': str(e)
-        }, status=500)
-    except Exception as e:
-        logger.error(f"Unexpected error: {str(e)}")
-        return JsonResponse({
-            'success': False,
-            'error': 'An unexpected error occurred while generating the contract.'
-        }, status=500)
+    #Save to file (optional):
+    save_to_file = input("Save code to file? (y/n): ")
+    if save_to_file.lower() == 'y':
+      filename = input("Enter filename (e.g., my_code.py): ")
+      with open(filename, "w") as f:
+        f.write(generated_code)
+      print(f"Code saved to {filename}")
