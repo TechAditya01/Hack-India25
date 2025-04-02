@@ -8,8 +8,10 @@
 
   // Get the API URL based on environment
   const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? 'http://localhost:3000'
-    : 'https://smartforge-landing.vercel.app';
+    ? 'http://localhost:8000'
+    : 'https://hackindia-6ufrj99w2-aditya-kumars-projects-7dbfb450.vercel.app';
+
+  console.log('Using API URL:', API_URL);
 
   // Handle form submission
   const emailForm = document.getElementById('emailForm');
@@ -91,7 +93,7 @@
   }
   
   // Function to handle sending a message
-  function sendMessage() {
+  async function sendMessage() {
     const chatInput = document.getElementById('chatInput');
     const chatMessages = document.getElementById('chatMessages');
     if (!chatInput || !chatMessages) return;
@@ -104,25 +106,43 @@
       // Clear input
       chatInput.value = '';
       
-      // Simulate AI response after a short delay
-      setTimeout(() => {
-        // Generate a simple response
-        let response;
-        if (message.toLowerCase().includes('hello') || message.toLowerCase().includes('hi')) {
-          response = 'Hello! How can I help you with smart contracts today?';
-        } else if (message.toLowerCase().includes('contract') || message.toLowerCase().includes('generate')) {
-          response = 'I can help you generate smart contracts using AI. Would you like to see an example?';
-        } else if (message.toLowerCase().includes('deploy')) {
-          response = 'Deploying smart contracts is easy with SmartForge.ai. You can deploy directly from chat or using your wallet.';
-        } else if (message.toLowerCase().includes('speed') || message.toLowerCase().includes('fast')) {
-          response = 'CoffeeCoders.ai helps you skip the boilerplate and deploy smart contracts in seconds, saving you time and effort.';
-        } else {
-          response = 'I understand. Tell me more about what you\'re looking to build with smart contracts?';
-        }
+      // Show typing indicator
+      const typingIndicator = document.createElement('div');
+      typingIndicator.className = 'message ai-message typing-indicator';
+      typingIndicator.innerHTML = '<div class="message-content">SmartForge.ai is thinking...</div>';
+      chatMessages.appendChild(typingIndicator);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+      
+      try {
+        // Send message to backend with just the prompt
+        const response = await fetch(`${API_URL}/api/chat`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify({
+            prompt: message
+          })
+        });
+
+        // Remove typing indicator
+        chatMessages.removeChild(typingIndicator);
         
-        // Add AI response to chat
-        addMessage(response, 'ai');
-      }, 1000);
+        if (response.ok) {
+          const data = await response.json();
+          // Add AI response to chat
+          addMessage(data.response, 'ai');
+        } else {
+          throw new Error('Failed to get response from server');
+        }
+      } catch (error) {
+        // Remove typing indicator
+        chatMessages.removeChild(typingIndicator);
+        
+        console.error('Error getting AI response:', error);
+        addMessage('Sorry, I encountered an error while processing your request. Please try again later.', 'ai');
+      }
     }
   }
   
