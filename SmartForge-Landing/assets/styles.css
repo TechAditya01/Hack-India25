@@ -431,17 +431,37 @@ body {
 
 /* Message styling */
 .message {
-  padding: 0.75rem;
-  border-radius: var(--radius);
-  max-width: 85%;
-  word-break: break-word;
+  margin: 1rem 0;
+  display: flex;
+  flex-direction: column;
+  max-width: 100%;
 }
 
 .message-content {
-  padding: 12px 16px;
-  border-radius: 8px;
-  max-width: 80%;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  max-width: 100%;
   word-wrap: break-word;
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+/* Message type styles */
+.system-message .message-content {
+  background-color: var(--dark-card);
+  color: var(--gray-300);
+}
+
+.user-message .message-content {
+  background-color: var(--primary);
+  color: var(--dark);
+  margin-left: auto;
+}
+
+.ai-message .message-content {
+  background-color: var(--dark-card);
+  color: var(--gray-300);
+  margin-right: auto;
 }
 
 /* Markdown styles for chat messages */
@@ -451,8 +471,9 @@ body {
 .message-content h4,
 .message-content h5,
 .message-content h6 {
-  margin: 8px 0;
-  color: #333;
+  margin: 0.5rem 0;
+  color: var(--white);
+  font-weight: 600;
 }
 
 .message-content h1 { font-size: 1.5em; }
@@ -460,49 +481,51 @@ body {
 .message-content h3 { font-size: 1.2em; }
 
 .message-content p {
-  margin: 8px 0;
+  margin: 0.5rem 0;
   line-height: 1.5;
 }
 
 .message-content ul,
 .message-content ol {
-  margin: 8px 0;
-  padding-left: 20px;
+  margin: 0.5rem 0;
+  padding-left: 1.5rem;
 }
 
 .message-content li {
-  margin: 4px 0;
+  margin: 0.25rem 0;
 }
 
 .message-content code {
-  background-color: #f5f5f5;
-  padding: 2px 4px;
-  border-radius: 4px;
-  font-family: monospace;
+  background-color: rgba(0, 0, 0, 0.2);
+  padding: 0.2rem 0.4rem;
+  border-radius: 0.25rem;
+  font-family: 'Fira Code', monospace;
+  font-size: 0.875em;
 }
 
 .message-content pre {
-  background-color: #f5f5f5;
-  padding: 12px;
-  border-radius: 6px;
+  background-color: rgba(0, 0, 0, 0.2);
+  padding: 1rem;
+  border-radius: 0.5rem;
   overflow-x: auto;
-  margin: 8px 0;
+  margin: 0.5rem 0;
 }
 
 .message-content pre code {
   background-color: transparent;
   padding: 0;
+  font-size: 0.875em;
 }
 
 .message-content blockquote {
-  border-left: 4px solid #ddd;
-  margin: 8px 0;
-  padding-left: 12px;
-  color: #666;
+  border-left: 3px solid var(--primary);
+  margin: 0.5rem 0;
+  padding-left: 1rem;
+  color: var(--gray-300);
 }
 
 .message-content a {
-  color: #0066cc;
+  color: var(--primary);
   text-decoration: none;
 }
 
@@ -513,25 +536,25 @@ body {
 .message-content table {
   border-collapse: collapse;
   width: 100%;
-  margin: 8px 0;
+  margin: 0.5rem 0;
 }
 
 .message-content th,
 .message-content td {
-  border: 1px solid #ddd;
-  padding: 8px;
+  border: 1px solid var(--gray-800);
+  padding: 0.5rem;
   text-align: left;
 }
 
 .message-content th {
-  background-color: #f5f5f5;
+  background-color: var(--dark-card);
 }
 
 /* Code highlighting styles */
 .hljs {
-  background: #f5f5f5;
-  padding: 12px;
-  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 1rem;
+  border-radius: 0.5rem;
   overflow-x: auto;
 }
 
@@ -543,64 +566,64 @@ body {
 .hljs-name,
 .hljs-strong {
   font-weight: bold;
-  color: #000080;
+  color: #569cd6;
 }
 
 .hljs-string,
 .hljs-attr,
 .hljs-template-tag {
-  color: #008000;
+  color: #ce9178;
 }
 
 .hljs-comment,
 .hljs-quote {
-  color: #666;
+  color: #6a9955;
   font-style: italic;
 }
 
 .hljs-number {
-  color: #0000ff;
+  color: #b5cea8;
 }
 
 .hljs-literal {
-  color: #000080;
+  color: #569cd6;
 }
 
 .hljs-variable,
 .hljs-template-variable {
-  color: #000080;
+  color: #9cdcfe;
 }
 
 .hljs-function {
-  color: #000080;
+  color: #dcdcaa;
 }
 
 .hljs-params {
-  color: #000080;
+  color: #9cdcfe;
 }
 
 .hljs-built_in {
-  color: #000080;
+  color: #4ec9b0;
 }
 
 .hljs-class {
-  color: #000080;
+  color: #4ec9b0;
 }
 
 .hljs-title {
-  color: #000080;
+  color: #dcdcaa;
 }
 
 .hljs-tag {
-  color: #000080;
+  color: #569cd6;
 }
 
 .hljs-attr {
-  color: #000080;
+  color: #9cdcfe;
 }
 
 .hljs-attribute {
-  color: #000080;
+  color: #9cdcfe;
 }
 
 .hljs-symbol,
@@ -609,19 +632,19 @@ body {
 .hljs-variable,
 .hljs-template-tag,
 .hljs-template-variable {
-  color: #000080;
+  color: #9cdcfe;
 }
 
 .hljs-section,
 .hljs-selector-tag {
-  color: #000080;
+  color: #569cd6;
 }
 
 .hljs-deletion,
 .hljs-quote,
 .hljs-comment,
 .hljs-meta {
-  color: #666;
+  color: #6a9955;
 }
 
 .hljs-keyword,
@@ -638,24 +661,6 @@ body {
 
 .hljs-emphasis {
   font-style: italic;
-}
-
-.system-message {
-  background-color: rgba(0, 255, 102, 0.1);
-  border: 1px solid rgba(0, 255, 102, 0.2);
-  align-self: flex-start;
-}
-
-.user-message {
-  background-color: var(--dark);
-  border: 1px solid var(--gray-700);
-  align-self: flex-end;
-}
-
-.ai-message {
-  background-color: var(--dark-lighter);
-  border: 1px solid var(--gray-700);
-  align-self: flex-start;
 }
 
 /* Typing indicator for future AI integration */

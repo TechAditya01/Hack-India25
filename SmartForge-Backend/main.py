@@ -115,8 +115,7 @@ Generate a complete Solidity smart contract based on the following requirements:
 
 Please provide the response in the following JSON format:
 {{
-    "message": "Here you will provide a detailed explanation of the contract, its features, and any important notes",
-    "contract_code": "The complete Solidity contract code here",
+    "message": "# Contract Overview\\n\\n## Description\\n[Provide a clear description of the contract's purpose and functionality]\\n\\n## Key Features\\n- [Feature 1]\\n- [Feature 2]\\n\\n## Security Considerations\\n- [Security point 1]\\n- [Security point 2]\\n\\n## Gas Optimizations\\n- [Optimization 1]\\n- [Optimization 2]\\n\\n## Usage Instructions\\n1. [Step 1]\\n2. [Step 2]\\n\\n## Important Notes\\n> [Any important warnings or considerations]\\n\\n## Technical Details\\n- Solidity Version: [version]\\n- License: MIT\\n- Dependencies: [list any dependencies]\\n\\n## Contract Code\\n```solidity\\n[The complete Solidity contract code here]\\n```",
     "metadata": {{
         "contract_type": "The type of contract (e.g., ERC20, ERC721, etc.)",
         "solidity_version": "The Solidity version used",
@@ -147,8 +146,7 @@ Answer the following question in a conversational and helpful way.
 
 Please provide the response in the following JSON format:
 {{
-    "message": "Your detailed response here",
-    "contract_code": null,
+    "message": "# Response\\n\\n## Overview\\n[Provide a brief overview of the answer]\\n\\n## Details\\n[Provide detailed explanation with proper markdown formatting]\\n\\n## Key Points\\n- [Point 1]\\n- [Point 2]\\n\\n## Additional Information\\n[Any additional relevant information]\\n\\n## Related Topics\\n- [Related topic 1]\\n- [Related topic 2]",
     "metadata": {{
         "response_type": "general",
         "topic": "The main topic of the question",
@@ -183,7 +181,6 @@ Use proper markdown formatting including:
             # If the response is not valid JSON, wrap it in our standard format
             response_data = {
                 "message": response.text,
-                "contract_code": None,
                 "metadata": {
                     "response_type": "general",
                     "generated_at": datetime.now().isoformat(),
