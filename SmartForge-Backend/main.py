@@ -108,58 +108,26 @@ async def chat(request: ChatRequest):
         
         if is_contract_request:
             # Create a structured prompt for contract generation
-            prompt = f"""Generate a complete Solidity smart contract based on the following requirements:
+            prompt = f"""You are SmartForge.ai, an AI assistant specializing in blockchain and smart contract development.
+Generate a complete Solidity smart contract based on the following requirements:
+
 {request.prompt}
 
-Please provide the code in the following format:
-
-```solidity
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
-
-// Contract Name: [Name]
-// Description: [Brief description]
-// Author: SmartForge.ai
-// Version: 1.0.0
-
-// Import statements
-// [List all imports]
-
-// Contract code
-contract [ContractName] {{
-    // State variables
-    // [List all state variables]
-
-    // Events
-    // [List all events]
-
-    // Modifiers
-    // [List all modifiers]
-
-    // Constructor
-    // [Constructor code]
-
-    // External functions
-    // [List all external functions]
-
-    // Public functions
-    // [List all public functions]
-
-    // Internal functions
-    // [List all internal functions]
-
-    // Private functions
-    // [List all private functions]
-
-    // View/Pure functions
-    // [List all view/pure functions]
-
-    // Fallback/Receive functions
-    // [List fallback/receive functions]
+Please provide the response in the following JSON format:
+{{
+    "message": "Here you will provide a detailed explanation of the contract, its features, and any important notes",
+    "contract_code": "The complete Solidity contract code here",
+    "metadata": {{
+        "contract_type": "The type of contract (e.g., ERC20, ERC721, etc.)",
+        "solidity_version": "The Solidity version used",
+        "security_features": ["List of security features implemented"],
+        "gas_optimizations": ["List of gas optimizations used"],
+        "events": ["List of events defined"],
+        "functions": ["List of main functions"]
+    }}
 }}
-```
 
-Requirements:
+Requirements for the contract:
 1. Use the latest Solidity version (^0.8.0)
 2. Include proper NatSpec comments
 3. Implement all necessary security checks
@@ -175,9 +143,20 @@ The code should be production-ready and well-documented."""
         else:
             # Create a conversational prompt for general questions
             prompt = f"""You are SmartForge.ai, an AI assistant specializing in blockchain and smart contract development. 
-Answer the following question in a conversational and helpful way:
+Answer the following question in a conversational and helpful way.
 
-{request.prompt}
+Please provide the response in the following JSON format:
+{{
+    "message": "Your detailed response here",
+    "contract_code": null,
+    "metadata": {{
+        "response_type": "general",
+        "topic": "The main topic of the question",
+        "complexity": "The complexity level of the answer"
+    }}
+}}
+
+Question: {request.prompt}
 
 If the question is about smart contracts or blockchain development, provide technical but accessible explanations.
 If it's a general greeting or question, respond naturally without using code formatting."""
@@ -187,47 +166,35 @@ If it's a general greeting or question, respond naturally without using code for
         response = model.generate_content(prompt)
         logger.info("Successfully generated response from Gemini")
         
-        # Structure the response based on whether it's a contract request or not
-        if is_contract_request:
-            response_data = {
-                "contract_code": response.text,
-                "metadata": {
-                    "generated_at": datetime.now().isoformat(),
-                    "model": "gemini-1.5-pro",
-                    "version": "1.0.0"
-                },
-                "format": "solidity",
-                "requirements": {
-                    "solidity_version": "^0.8.0",
-                    "includes_natspec": True,
-                    "includes_security_checks": True,
-                    "includes_gas_optimization": True,
-                    "includes_events": True,
-                    "includes_input_validation": True,
-                    "includes_edge_cases": True,
-                    "includes_error_messages": True,
-                    "uses_safe_math": True
-                }
-            }
-            return ChatResponse(
-                success=True,
-                message="Contract generated successfully",
-                data=response_data
-            )
-        else:
+        # Parse the response text as JSON
+        try:
+            import json
+            response_data = json.loads(response.text)
+        except json.JSONDecodeError:
+            # If the response is not valid JSON, wrap it in our standard format
             response_data = {
                 "message": response.text,
+                "contract_code": None,
                 "metadata": {
+                    "response_type": "general",
                     "generated_at": datetime.now().isoformat(),
                     "model": "gemini-1.5-pro",
                     "version": "1.0.0"
                 }
             }
-            return ChatResponse(
-                success=True,
-                message="Response generated successfully",
-                data=response_data
-            )
+        
+        # Add common metadata
+        response_data["metadata"].update({
+            "generated_at": datetime.now().isoformat(),
+            "model": "gemini-1.5-pro",
+            "version": "1.0.0"
+        })
+        
+        return ChatResponse(
+            success=True,
+            message="Response generated successfully",
+            data=response_data
+        )
 
     except Exception as e:
         logger.error(f"Error in chat endpoint: {str(e)}", exc_info=True)
