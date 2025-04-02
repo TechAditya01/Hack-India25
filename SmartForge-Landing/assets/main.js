@@ -7,9 +7,7 @@
   }
 
   // Get the API URL based on environment
-  const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? 'http://localhost:8000'
-    : 'https://hackindia-6ufrj99w2-aditya-kumars-projects-7dbfb450.vercel.app';
+  const API_URL = 'https://hackindia-spark-4-2025-coffee-coders-wn6r.onrender.com';
 
   console.log('Using API URL:', API_URL);
 
@@ -83,7 +81,14 @@
     
     const messageContent = document.createElement('div');
     messageContent.className = 'message-content';
-    messageContent.textContent = content;
+    
+    // Check if content is markdown
+    if (typeof content === 'string' && content.includes('#') || content.includes('*') || content.includes('`')) {
+      // Use marked library to render markdown
+      messageContent.innerHTML = marked.parse(content);
+    } else {
+      messageContent.textContent = content;
+    }
     
     messageDiv.appendChild(messageContent);
     chatMessages.appendChild(messageDiv);
@@ -99,50 +104,43 @@
     if (!chatInput || !chatMessages) return;
     
     const message = chatInput.value.trim();
-    if (message) {
-      // Add user message to chat
-      addMessage(message, 'user');
+    if (!message) return;
+    
+    // Add user message to chat
+    addMessage(message, 'user');
+    chatInput.value = '';
+    
+    try {
+      // Send message to backend
+      const response = await fetch(`${API_URL}/api/chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({ prompt: message })
+      });
       
-      // Clear input
-      chatInput.value = '';
-      
-      // Show typing indicator
-      const typingIndicator = document.createElement('div');
-      typingIndicator.className = 'message ai-message typing-indicator';
-      typingIndicator.innerHTML = '<div class="message-content">SmartForge.ai is thinking...</div>';
-      chatMessages.appendChild(typingIndicator);
-      chatMessages.scrollTop = chatMessages.scrollHeight;
-      
-      try {
-        // Send message to backend with just the prompt
-        const response = await fetch(`${API_URL}/api/chat`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          },
-          body: JSON.stringify({
-            prompt: message
-          })
-        });
-
-        // Remove typing indicator
-        chatMessages.removeChild(typingIndicator);
-        
-        if (response.ok) {
-          const data = await response.json();
-          // Add AI response to chat
-          addMessage(data.response, 'ai');
-        } else {
-          throw new Error('Failed to get response from server');
-        }
-      } catch (error) {
-        // Remove typing indicator
-        chatMessages.removeChild(typingIndicator);
-        
-        console.error('Error getting AI response:', error);
-        addMessage('Sorry, I encountered an error while processing your request. Please try again later.', 'ai');
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        // Add AI response to chat
+        addMessage(data.data.message, 'ai');
+        
+        // If there's contract code, add it as a separate message
+        if (data.data.contract_code) {
+          addMessage('```solidity\n' + data.data.contract_code + '\n```', 'ai');
+        }
+      } else {
+        addMessage('Sorry, I encountered an error. Please try again.', 'error');
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      addMessage('Sorry, I encountered an error. Please try again.', 'error');
     }
   }
   
@@ -226,17 +224,17 @@
   }
   
   
-  // Chat input functionality
+  // Add event listeners for chat input
   const chatInput = document.getElementById('chatInput');
-  const chatSendButton = document.querySelector('.chat-send-button');
+  const sendButton = document.querySelector('.chat-send-button');
   
-  if (chatInput && chatSendButton) {
-    // Send button click
-    chatSendButton.addEventListener('click', sendMessage);
-
-    // Allow Enter key to send message
+  if (chatInput && sendButton) {
+    // Send on button click
+    sendButton.addEventListener('click', sendMessage);
+    
+    // Send on Enter key
     chatInput.addEventListener('keypress', function(e) {
-      if (e.key === 'Enter') {
+      if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
         sendMessage();
       }

@@ -108,14 +108,14 @@ async def chat(request: ChatRequest):
         
         if is_contract_request:
             # Create a structured prompt for contract generation
-            prompt = f"""You are SmartForge.ai, an AI assistant specializing in blockchain and smart contract development.
+            prompt = f"""You are Coffee-coders.ai, an AI assistant specializing in blockchain and smart contract development.
 Generate a complete Solidity smart contract based on the following requirements:
 
 {request.prompt}
 
 Please provide the response in the following JSON format:
 {{
-    "message": "# Contract Overview\\n\\n## Description\\n[Provide a clear description of the contract's purpose and functionality]\\n\\n## Key Features\\n- [Feature 1]\\n- [Feature 2]\\n\\n## Security Considerations\\n- [Security point 1]\\n- [Security point 2]\\n\\n## Gas Optimizations\\n- [Optimization 1]\\n- [Optimization 2]\\n\\n## Usage Instructions\\n1. [Step 1]\\n2. [Step 2]\\n\\n## Important Notes\\n> [Any important warnings or considerations]\\n\\n## Technical Details\\n- Solidity Version: [version]\\n- License: MIT\\n- Dependencies: [list any dependencies]",
+    "message": "Here you will provide a detailed explanation of the contract, its features, and any important notes",
     "contract_code": "The complete Solidity contract code here",
     "metadata": {{
         "contract_type": "The type of contract (e.g., ERC20, ERC721, etc.)",
@@ -142,12 +142,12 @@ Requirements for the contract:
 The code should be production-ready and well-documented."""
         else:
             # Create a conversational prompt for general questions
-            prompt = f"""You are SmartForge.ai, an AI assistant specializing in blockchain and smart contract development. 
+            prompt = f"""You are Coffee-coders.ai, an AI assistant specializing in blockchain and smart contract development. 
 Answer the following question in a conversational and helpful way.
 
 Please provide the response in the following JSON format:
 {{
-    "message": "# Response\\n\\n## Overview\\n[Provide a brief overview of the answer]\\n\\n## Details\\n[Provide detailed explanation with proper markdown formatting]\\n\\n## Key Points\\n- [Point 1]\\n- [Point 2]\\n\\n## Additional Information\\n[Any additional relevant information]\\n\\n## Related Topics\\n- [Related topic 1]\\n- [Related topic 2]",
+    "message": "Your detailed response here",
     "contract_code": null,
     "metadata": {{
         "response_type": "general",
