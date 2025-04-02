@@ -33,20 +33,32 @@
         const response = await fetch(`${API_URL}/api/subscribe`, {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
+            'Content-Type': 'application/json'
           },
           body: JSON.stringify({ email })
         });
 
         console.log('Response status:', response.status);
-        const data = await response.json();
-        console.log('Response data:', data);
+        let data;
+        try {
+          const text = await response.text();
+          console.log('Raw response:', text);
+          data = JSON.parse(text);
+          console.log('Parsed response data:', data);
+        } catch (jsonError) {
+          console.error('Error parsing JSON response:', jsonError);
+          throw new Error('Invalid response from server');
+        }
         
         if (response.ok) {
           emailInput.value = '';
           alert('Thank you! You\'ve been added to our early access list.');
         } else {
+          console.error('Server error response:', {
+            status: response.status,
+            statusText: response.statusText,
+            data: data
+          });
           alert(data.error || 'Something went wrong. Please try again.');
         }
       } catch (error) {
@@ -82,10 +94,30 @@
     const messageContent = document.createElement('div');
     messageContent.className = 'message-content';
     
-    // Check if content is markdown
-    if (typeof content === 'string' && content.includes('#') || content.includes('*') || content.includes('`')) {
-      // Use marked library to render markdown
-      messageContent.innerHTML = marked.parse(content);
+    if (type === 'ai') {
+      try {
+        // If content is a string containing JSON, parse it and extract only the message
+        if (typeof content === 'string') {
+          try {
+            const jsonContent = JSON.parse(content);
+            if (jsonContent.message) {
+              content = jsonContent.message;
+            }
+          } catch (e) {
+            // If parsing fails, use the content as is
+            console.log('Content is not JSON, using as is');
+          }
+        } else if (content.message) {
+          // If content is already an object with message property
+          content = content.message;
+        }
+        
+        // Use marked library to render markdown
+        messageContent.innerHTML = marked.parse(content);
+      } catch (error) {
+        console.error('Error parsing content:', error);
+        messageContent.textContent = content;
+      }
     } else {
       messageContent.textContent = content;
     }
@@ -111,31 +143,38 @@
     chatInput.value = '';
     
     try {
+      console.log('Sending message to:', `${API_URL}/api/chat`);
       // Send message to backend
       const response = await fetch(`${API_URL}/api/chat`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({ prompt: message })
       });
       
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      console.log('Response status:', response.status);
+      let data;
+      try {
+        const text = await response.text();
+        console.log('Raw response:', text);
+        data = JSON.parse(text);
+        console.log('Parsed response data:', data);
+      } catch (jsonError) {
+        console.error('Error parsing JSON response:', jsonError);
+        throw new Error('Invalid response from server');
       }
       
-      const data = await response.json();
-      
-      if (data.success) {
-        // Add AI response to chat
-        addMessage(data.data.message, 'ai');
-        
-        // If there's contract code, add it as a separate message
-        if (data.data.contract_code) {
-          addMessage('```solidity\n' + data.data.contract_code + '\n```', 'ai');
-        }
+      if (response.ok && data.success && data.data) {
+        // Extract just the message part from the response
+        const messageContent = data.data.message;
+        addMessage(messageContent, 'ai');
       } else {
+        console.error('Server error response:', {
+          status: response.status,
+          statusText: response.statusText,
+          data: data
+        });
         addMessage('Sorry, I encountered an error. Please try again.', 'error');
       }
     } catch (error) {

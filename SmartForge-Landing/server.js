@@ -5,21 +5,14 @@ const path = require('path');
 require('dotenv').config();
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 3001;
 
 // CORS configuration
 const corsOptions = {
-  origin: [
-    'http://localhost:5500',
-    'http://127.0.0.1:5500',
-    'http://localhost:3000',
-    'http://127.0.0.1:3000',
-    'https://smartforge-landing.vercel.app',
-    'https://smartforge-landing-git-main-yourusername.vercel.app'
-  ],
-  methods: ['GET', 'POST'],
+  origin: '*', // Allow all origins
+  methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Accept'],
-  credentials: true
+  maxAge: 86400 // 24 hours
 };
 
 // Middleware
@@ -27,34 +20,53 @@ app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'assets')));
 
+// Add request logging middleware
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+  console.log('Request headers:', req.headers);
+  console.log('Request body:', req.body);
+  next();
+});
+
+// Add response logging middleware
+app.use((req, res, next) => {
+  const originalJson = res.json;
+  res.json = function(data) {
+    console.log('Response:', {
+      url: req.url,
+      method: req.method,
+      status: res.statusCode,
+      data: data
+    });
+    return originalJson.call(this, data);
+  };
+  next();
+});
+
 // PostgreSQL connection configuration
 const pool = new Pool({
-  user: 'hackindia_euz3_user',
-  host: 'dpg-cvm88dggjchc73cfu090-a.singapore-postgres.render.com',
-  database: 'hackindia_euz3',
-  password: 'WeAxCS1RgaV6F7kTfNIIK5Z6w7BAvNzt',
-  port: 5432,
+  connectionString: 'postgresql://hackindia_euz3_user:WeAxCS1RgaV6F7kTfNIIK5Z6w7BAvNzt@dpg-cvm88dggjchc73cfu090-a.singapore-postgres.render.com/hackindia_euz3',
   ssl: {
     rejectUnauthorized: false
   },
-  connectionTimeoutMillis: 5000,
-  idleTimeoutMillis: 30000
+  max: 20,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 5000
 });
 
 // Test database connection
-pool.connect((err, client, release) => {
-  if (err) {
-    console.error('Error connecting to the database:', err.stack);
-    return;
-  }
-  console.log('Successfully connected to PostgreSQL database');
-  release();
+pool.on('error', (err) => {
+  console.error('Unexpected error on idle client', err);
 });
 
-// Create emails table if it doesn't exist
-async function createEmailsTable() {
-  const client = await pool.connect();
+// Test database connection immediately and create table if needed
+(async () => {
+  let client;
   try {
+    client = await pool.connect();
+    console.log('Successfully connected to PostgreSQL database');
+    
+    // Create table if it doesn't exist
     await client.query(`
       CREATE TABLE IF NOT EXISTS emails (
         id SERIAL PRIMARY KEY,
@@ -63,44 +75,115 @@ async function createEmailsTable() {
       );
     `);
     console.log('Emails table created or already exists');
-  } catch (error) {
-    console.error('Error creating emails table:', error);
+  } catch (err) {
+    console.error('Database initialization error:', err);
   } finally {
-    client.release();
+    if (client) {
+      client.release();
+    }
   }
-}
-
-// Initialize table
-createEmailsTable();
+})();
 
 // API endpoint to store email
 app.post('/api/subscribe', async (req, res) => {
   console.log('Received subscription request:', req.body);
-  const { email } = req.body;
   
-  if (!email) {
-    console.log('No email provided in request');
-    return res.status(400).json({ error: 'Email is required' });
-  }
-
-  const client = await pool.connect();
   try {
-    console.log('Attempting to insert email:', email);
-    const result = await client.query(
-      'INSERT INTO emails (email) VALUES ($1) RETURNING *',
-      [email]
-    );
-    console.log('Successfully inserted email:', result.rows[0]);
-    res.status(201).json({ message: 'Email stored successfully', data: result.rows[0] });
+    const { email } = req.body;
+    
+    // Validate email
+    if (!email) {
+      console.log('No email provided in request');
+      return res.status(400).json({ 
+        success: false,
+        error: 'Email is required' 
+      });
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      console.log('Invalid email format:', email);
+      return res.status(400).json({ 
+        success: false,
+        error: 'Invalid email format' 
+      });
+    }
+
+    const client = await pool.connect();
+    
+    try {
+      // Check if email exists
+      const existingEmail = await client.query(
+        'SELECT email FROM emails WHERE email = $1',
+        [email]
+      );
+
+      if (existingEmail.rows.length > 0) {
+        return res.status(400).json({ 
+          success: false,
+          error: 'Email already exists' 
+        });
+      }
+
+      // Insert email
+      const result = await client.query(
+        'INSERT INTO emails (email) VALUES ($1) RETURNING *',
+        [email]
+      );
+      
+      console.log('Successfully inserted email:', result.rows[0]);
+      return res.status(201).json({ 
+        success: true,
+        message: 'Email stored successfully', 
+        data: result.rows[0] 
+      });
+    } finally {
+      client.release();
+    }
   } catch (error) {
     console.error('Database error:', error);
-    if (error.code === '23505') { // Unique violation
-      res.status(400).json({ error: 'Email already exists' });
-    } else {
-      res.status(500).json({ error: 'Internal server error' });
+    return res.status(500).json({ 
+      success: false,
+      error: 'Internal server error',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
+// API endpoint for chat
+app.post('/api/chat', async (req, res) => {
+  console.log('Received chat request:', req.body);
+  
+  try {
+    const { prompt } = req.body;
+    
+    if (!prompt) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'Prompt is required' 
+      });
     }
-  } finally {
-    client.release();
+
+    // For now, return a simple response
+    return res.status(200).json({ 
+      success: true,
+      data: {
+        message: "Hello! I'm Coffee-coders.ai, your friendly AI assistant. How can I help you today?",
+        metadata: {
+          response_type: "general",
+          topic: "Greeting",
+          complexity: "Low"
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Chat error:', error);
+    return res.status(500).json({ 
+      success: false,
+      error: 'Internal server error',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 });
 
@@ -122,6 +205,6 @@ module.exports = app;
 if (process.env.NODE_ENV !== 'production') {
   app.listen(port, () => {
     console.log(`Server running on port ${port}`);
-    console.log(`CORS enabled for origins: ${corsOptions.origin.join(', ')}`);
+    console.log('CORS enabled for all origins');
   });
 } 

@@ -438,90 +438,71 @@ body {
 }
 
 .message-content {
-  padding: 1rem;
-  border-radius: 0.5rem;
-  max-width: 100%;
-  word-wrap: break-word;
-  font-size: 0.875rem;
-  line-height: 1.4;
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: normal;
+  overflow-wrap: break-word;
+  color: var(--white);
 }
 
-/* Message type styles */
-.system-message .message-content {
-  background-color: var(--dark-card);
-  color: var(--gray-300);
-}
-
-.user-message .message-content {
-  background-color: var(--primary);
-  color: var(--dark);
-  margin-left: auto;
-}
-
-.ai-message .message-content {
-  background-color: var(--dark-card);
-  color: var(--gray-300);
-  margin-right: auto;
-}
-
-/* Markdown styles for chat messages */
+/* Markdown styles */
 .message-content h1,
 .message-content h2,
 .message-content h3,
 .message-content h4,
 .message-content h5,
 .message-content h6 {
-  margin: 0.5rem 0;
-  color: var(--white);
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
   font-weight: 600;
+  line-height: 1.25;
 }
 
 .message-content h1 { font-size: 1.5em; }
-.message-content h2 { font-size: 1.3em; }
-.message-content h3 { font-size: 1.2em; }
+.message-content h2 { font-size: 1.25em; }
+.message-content h3 { font-size: 1.125em; }
 
 .message-content p {
-  margin: 0.5rem 0;
-  line-height: 1.5;
+  margin: 0.5em 0;
 }
 
 .message-content ul,
 .message-content ol {
-  margin: 0.5rem 0;
-  padding-left: 1.5rem;
+  margin: 0.5em 0;
+  padding-left: 1.5em;
 }
 
 .message-content li {
-  margin: 0.25rem 0;
+  margin: 0.25em 0;
 }
 
 .message-content code {
-  background-color: rgba(0, 0, 0, 0.2);
-  padding: 0.2rem 0.4rem;
-  border-radius: 0.25rem;
-  font-family: 'Fira Code', monospace;
-  font-size: 0.875em;
+  background-color: var(--dark);
+  padding: 0.2em 0.4em;
+  border-radius: 3px;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 0.9em;
 }
 
 .message-content pre {
-  background-color: rgba(0, 0, 0, 0.2);
-  padding: 1rem;
-  border-radius: 0.5rem;
+  background-color: var(--dark);
+  padding: 1em;
+  border-radius: 5px;
   overflow-x: auto;
-  margin: 0.5rem 0;
+  margin: 0.5em 0;
 }
 
 .message-content pre code {
   background-color: transparent;
   padding: 0;
-  font-size: 0.875em;
+  border-radius: 0;
 }
 
 .message-content blockquote {
   border-left: 3px solid var(--primary);
-  margin: 0.5rem 0;
-  padding-left: 1rem;
-  color: var(--gray-300);
+  margin: 0.5em 0;
+  padding-left: 1em;
+  color: var(--gray-400);
 }
 
 .message-content a {
@@ -536,18 +517,46 @@ body {
 .message-content table {
   border-collapse: collapse;
   width: 100%;
-  margin: 0.5rem 0;
+  margin: 0.5em 0;
 }
 
 .message-content th,
 .message-content td {
   border: 1px solid var(--gray-800);
-  padding: 0.5rem;
+  padding: 0.5em;
   text-align: left;
 }
 
 .message-content th {
+  background-color: var(--dark-lighter);
+}
+
+/* Message types */
+.user-message {
+  background-color: var(--dark-lighter);
+  margin-left: auto;
+  margin-right: 16px;
+  max-width: 80%;
+  border-radius: var(--radius);
+  padding: 8px 16px;
+}
+
+.ai-message {
   background-color: var(--dark-card);
+  margin-right: auto;
+  margin-left: 16px;
+  max-width: 80%;
+  border-radius: var(--radius);
+  padding: 8px 16px;
+}
+
+.error-message {
+  background-color: rgba(255, 0, 0, 0.1);
+  color: #ff4444;
+  margin: 8px auto;
+  max-width: 80%;
+  border-radius: var(--radius);
+  padding: 8px 16px;
 }
 
 /* Code highlighting styles */
