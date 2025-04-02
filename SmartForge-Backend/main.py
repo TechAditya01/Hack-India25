@@ -115,7 +115,7 @@ Generate a complete Solidity smart contract based on the following requirements:
 
 Please provide the response in the following JSON format:
 {{
-    "message": "Here you will provide a detailed explanation of the contract, its features, and any important notes",
+    "message": "# Contract Overview\\n\\n## Description\\n[Provide a clear description of the contract's purpose and functionality]\\n\\n## Key Features\\n- [Feature 1]\\n- [Feature 2]\\n\\n## Security Considerations\\n- [Security point 1]\\n- [Security point 2]\\n\\n## Gas Optimizations\\n- [Optimization 1]\\n- [Optimization 2]\\n\\n## Usage Instructions\\n1. [Step 1]\\n2. [Step 2]\\n\\n## Important Notes\\n> [Any important warnings or considerations]\\n\\n## Technical Details\\n- Solidity Version: [version]\\n- License: MIT\\n- Dependencies: [list any dependencies]",
     "contract_code": "The complete Solidity contract code here",
     "metadata": {{
         "contract_type": "The type of contract (e.g., ERC20, ERC721, etc.)",
@@ -147,7 +147,7 @@ Answer the following question in a conversational and helpful way.
 
 Please provide the response in the following JSON format:
 {{
-    "message": "Your detailed response here",
+    "message": "# Response\\n\\n## Overview\\n[Provide a brief overview of the answer]\\n\\n## Details\\n[Provide detailed explanation with proper markdown formatting]\\n\\n## Key Points\\n- [Point 1]\\n- [Point 2]\\n\\n## Additional Information\\n[Any additional relevant information]\\n\\n## Related Topics\\n- [Related topic 1]\\n- [Related topic 2]",
     "contract_code": null,
     "metadata": {{
         "response_type": "general",
@@ -159,7 +159,16 @@ Please provide the response in the following JSON format:
 Question: {request.prompt}
 
 If the question is about smart contracts or blockchain development, provide technical but accessible explanations.
-If it's a general greeting or question, respond naturally without using code formatting."""
+If it's a general greeting or question, respond naturally without using code formatting.
+
+Use proper markdown formatting including:
+- Headers (##, ###)
+- Lists (- or 1.)
+- Code blocks (```)
+- Blockquotes (>)
+- Bold (**) and italic (*) text
+- Tables when appropriate
+- Links when referencing external resources"""
 
         logger.info("Generating response using Gemini...")
         # Generate response using Gemini
