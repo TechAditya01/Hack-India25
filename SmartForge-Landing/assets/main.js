@@ -6,12 +6,17 @@
     return regex.test(email.toLowerCase());
   }
 
+  // Get the API URL based on environment
+  const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://localhost:3000'
+    : 'https://smartforge-landing.vercel.app';
+
   // Handle form submission
   const emailForm = document.getElementById('emailForm');
   const emailInput = document.getElementById('emailInput');
 
   if (emailForm) {
-    emailForm.addEventListener('submit', function(e) {
+    emailForm.addEventListener('submit', async function(e) {
       e.preventDefault();
       
       const email = emailInput.value.trim();
@@ -23,12 +28,31 @@
       
       emailInput.classList.remove('error');
       
-      // Here would be the code to submit the email to a server
-      // For now, just clear the input and show success
-      emailInput.value = '';
-      
-      // Show a simple success message
-      alert('Thank you! You\'ve been added to our early access list.');
+      try {
+        console.log('Sending email to server:', email);
+        const response = await fetch(`${API_URL}/api/subscribe`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify({ email })
+        });
+
+        console.log('Response status:', response.status);
+        const data = await response.json();
+        console.log('Response data:', data);
+        
+        if (response.ok) {
+          emailInput.value = '';
+          alert('Thank you! You\'ve been added to our early access list.');
+        } else {
+          alert(data.error || 'Something went wrong. Please try again.');
+        }
+      } catch (error) {
+        console.error('Error submitting email:', error);
+        alert('Failed to submit email. Please try again later.');
+      }
     });
 
     // Remove error styling when user starts typing again

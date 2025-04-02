@@ -41,8 +41,8 @@ logger.info("Initializing Gemini API...")
 try:
     genai.configure(api_key=GEMINI_API_KEY)
     model = genai.GenerativeModel(
-    model_name="gemini-1.5-pro"
-)
+        model_name="gemini-1.5-pro"
+    )
 except Exception as e:
     logger.error(f"Failed to initialize Gemini API: {str(e)}")
     raise
@@ -63,13 +63,6 @@ async def chat(request: ContractRequest):
         logger.info(f"Received chat request with message: {request.contract_details}")
         
         # Create a prompt for the chat
-        # prompt = f"""
-        # You are SmartForge.ai, an AI assistant specialized in helping users generate and deploy smart contracts.
-        # You provide concise, technical, and helpful responses about blockchain, cryptocurrency, and smart contract development.
-        # Always remain factual and offer solutions to user queries related to smart contract development.
-
-        # User message: {request.contract_details}
-        # """
         prompt = f"give me code for solidity contract for {request.contract_details}"
 
         logger.info("Generating response using Gemini...")
