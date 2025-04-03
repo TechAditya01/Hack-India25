@@ -7,6 +7,8 @@ from dotenv import load_dotenv
 import google.generativeai as genai
 import logging
 from datetime import datetime
+import psycopg2
+from psycopg2.extras import RealDictCursor
 
 # Load environment variables
 load_dotenv()
@@ -14,6 +16,41 @@ load_dotenv()
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Database configuration
+DATABASE_URL = "postgresql://hackindia_652w_user:dx8XzlXYo01FhlVy5pBqg4ZJcgT1EWIA@dpg-cvmcpq15pdvs73f1vn1g-a.singapore-postgres.render.com/hackindia_652w"
+
+# Initialize database connection
+def get_db_connection():
+    try:
+        conn = psycopg2.connect(DATABASE_URL)
+        return conn
+    except Exception as e:
+        logger.error(f"Error connecting to database: {str(e)}")
+        raise
+
+# Create tables if they don't exist
+def init_db():
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS emails (
+                    id SERIAL PRIMARY KEY,
+                    email VARCHAR(255) NOT NULL UNIQUE,
+                    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                );
+            """)
+        conn.commit()
+        logger.info("Database tables initialized successfully")
+    except Exception as e:
+        logger.error(f"Error initializing database: {str(e)}")
+        raise
+    finally:
+        conn.close()
+
+# Initialize database tables
+init_db()
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -65,7 +102,13 @@ class ChatResponse(BaseModel):
     success: bool
     message: str
     data: Dict[str, Any]
-    
+
+class EmailRequest(BaseModel):
+    email: str
+
+class EmailResponse(BaseModel):
+    success: bool
+    message: str
 
 @app.get("/")
 async def root():
@@ -255,6 +298,44 @@ async def generate_contract(request: ContractRequest):
     except Exception as e:
         logger.error(f"Error in generate-contract endpoint: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/subscribe", response_model=EmailResponse)
+async def subscribe(request: EmailRequest):
+    try:
+        conn = get_db_connection()
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "INSERT INTO emails (email) VALUES (%s) ON CONFLICT (email) DO NOTHING",
+                    (request.email,)
+                )
+            conn.commit()
+            return EmailResponse(
+                success=True,
+                message="Email subscribed successfully"
+            )
+        except Exception as e:
+            logger.error(f"Database error: {str(e)}")
+            raise HTTPException(
+                status_code=500,
+                detail={
+                    "success": False,
+                    "message": "Failed to store email",
+                    "error": str(e)
+                }
+            )
+        finally:
+            conn.close()
+    except Exception as e:
+        logger.error(f"Error in subscribe endpoint: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "success": False,
+                "message": "Failed to process request",
+                "error": str(e)
+            }
+        )
 
 if __name__ == "__main__":
     import uvicorn

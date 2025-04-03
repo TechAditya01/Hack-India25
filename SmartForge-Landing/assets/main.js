@@ -158,23 +158,35 @@
       try {
         const text = await response.text();
         console.log('Raw response:', text);
-        data = JSON.parse(text);
-        console.log('Parsed response data:', data);
-      } catch (jsonError) {
-        console.error('Error parsing JSON response:', jsonError);
-        throw new Error('Invalid response from server');
-      }
-      
-      if (response.ok && data.success && data.data) {
-        // Extract just the message part from the response
-        const messageContent = data.data.message;
-        addMessage(messageContent, 'ai');
-      } else {
-        console.error('Server error response:', {
-          status: response.status,
-          statusText: response.statusText,
-          data: data
-        });
+        
+        // First parse the outer JSON
+        const outerData = JSON.parse(text);
+        
+        // Extract the inner JSON string from data.message
+        const innerJsonMatch = outerData.data.message.match(/```json\n([\s\S]*?)\n```/);
+        if (innerJsonMatch && innerJsonMatch[1]) {
+          // Parse the inner JSON
+          const innerData = JSON.parse(innerJsonMatch[1]);
+          
+          // Get the actual message content
+          const messageContent = innerData.message
+            .replace(/\\n/g, '\n')
+            .replace(/\\"/g, '"')
+            .replace(/\\\\/g, '\\')
+            // Remove the header section
+            .replace(/^# Response\s*## Overview\s*/g, '')
+            // Remove the Related Topics section
+            .replace(/\s*## Related Topics[\s\S]*$/, '')
+            // Clean up any extra newlines
+            .trim();
+            
+          addMessage(messageContent, 'ai');
+        } else {
+          console.error('Could not extract inner message from response');
+          addMessage('Sorry, I encountered an error. Please try again.', 'error');
+        }
+      } catch (error) {
+        console.error('Error handling response:', error);
         addMessage('Sorry, I encountered an error. Please try again.', 'error');
       }
     } catch (error) {
