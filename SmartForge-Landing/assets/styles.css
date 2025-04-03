@@ -431,125 +431,126 @@ body {
 
 /* Message styling */
 .message {
-  margin: 1rem 0;
-  display: flex;
-  flex-direction: column;
-  max-width: 100%;
+  margin: 10px;
+  padding: 15px;
+  border-radius: 10px;
+  max-width: 80%;
+  word-wrap: break-word;
 }
 
+.user-message {
+  background-color: #2c2c2c;
+  margin-left: auto;
+  color: #ffffff;
+}
+
+.ai-message {
+  background-color: #1e1e1e;
+  margin-right: auto;
+  color: #ffffff;
+  font-family: 'Inter', sans-serif;
+}
+
+/* Markdown styling */
 .message-content {
-  font-size: 14px;
-  line-height: 1.5;
-  white-space: normal;
-  overflow-wrap: break-word;
-  color: var(--white);
+  font-family: 'Inter', sans-serif;
+  line-height: 1.6;
 }
 
-/* Markdown styles */
-.message-content h1,
-.message-content h2,
-.message-content h3,
-.message-content h4,
-.message-content h5,
-.message-content h6 {
-  margin-top: 0.5em;
-  margin-bottom: 0.5em;
+/* Markdown styling within AI messages */
+.ai-message .message-content h1,
+.ai-message .message-content h2,
+.ai-message .message-content h3 {
+  color: #58a6ff;
+  margin: 0.5em 0;
   font-weight: 600;
-  line-height: 1.25;
 }
 
-.message-content h1 { font-size: 1.5em; }
-.message-content h2 { font-size: 1.25em; }
-.message-content h3 { font-size: 1.125em; }
+.ai-message .message-content h1 { font-size: 1.2em; }
+.ai-message .message-content h2 { font-size: 1.1em; }
+.ai-message .message-content h3 { font-size: 1em; }
 
-.message-content p {
+.ai-message .message-content p {
   margin: 0.5em 0;
 }
 
-.message-content ul,
-.message-content ol {
+.ai-message .message-content ul,
+.ai-message .message-content ol {
   margin: 0.5em 0;
   padding-left: 1.5em;
 }
 
-.message-content li {
+.ai-message .message-content li {
   margin: 0.25em 0;
 }
 
-.message-content code {
-  background-color: var(--dark);
+.ai-message .message-content code {
+  font-family: 'Fira Code', monospace;
+  background-color: #2c2c2c;
   padding: 0.2em 0.4em;
   border-radius: 3px;
-  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
   font-size: 0.9em;
+  color: #79c0ff;
 }
 
-.message-content pre {
-  background-color: var(--dark);
+.ai-message .message-content pre {
+  background-color: #2c2c2c;
   padding: 1em;
   border-radius: 5px;
   overflow-x: auto;
   margin: 0.5em 0;
 }
 
-.message-content pre code {
+.ai-message .message-content pre code {
   background-color: transparent;
   padding: 0;
-  border-radius: 0;
+  color: #e6edf3;
+  display: block;
 }
 
-.message-content blockquote {
-  border-left: 3px solid var(--primary);
+.ai-message .message-content blockquote {
+  border-left: 3px solid #58a6ff;
   margin: 0.5em 0;
   padding-left: 1em;
-  color: var(--gray-400);
+  color: #8b949e;
 }
 
-.message-content a {
-  color: var(--primary);
-  text-decoration: none;
+.ai-message .message-content strong {
+  color: #79c0ff;
+  font-weight: 600;
 }
 
-.message-content a:hover {
-  text-decoration: underline;
+.ai-message .message-content em {
+  color: #d2a8ff;
+  font-style: italic;
 }
 
-.message-content table {
-  border-collapse: collapse;
-  width: 100%;
-  margin: 0.5em 0;
+/* Chat container styles */
+.chat-messages {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px;
+  height: calc(100vh - 200px);
+  overflow-y: auto;
 }
 
-.message-content th,
-.message-content td {
-  border: 1px solid var(--gray-800);
-  padding: 0.5em;
-  text-align: left;
+/* Syntax highlighting */
+.hljs {
+  background: #2c2c2c !important;
+  border-radius: 5px;
 }
 
-.message-content th {
-  background-color: var(--dark-lighter);
-}
+.hljs-keyword { color: #ff7b72; }
+.hljs-string { color: #a5d6ff; }
+.hljs-comment { color: #8b949e; }
+.hljs-function { color: #d2a8ff; }
+.hljs-number { color: #79c0ff; }
+.hljs-operator { color: #ff7b72; }
+.hljs-class { color: #ffa657; }
+.hljs-property { color: #79c0ff; }
 
-/* Message types */
-.user-message {
-  background-color: var(--dark-lighter);
-  margin-left: auto;
-  margin-right: 16px;
-  max-width: 80%;
-  border-radius: var(--radius);
-  padding: 8px 16px;
-}
-
-.ai-message {
-  background-color: var(--dark-card);
-  margin-right: auto;
-  margin-left: 16px;
-  max-width: 80%;
-  border-radius: var(--radius);
-  padding: 8px 16px;
-}
-
+/* Error message */
 .error-message {
   background-color: rgba(255, 0, 0, 0.1);
   color: #ff4444;

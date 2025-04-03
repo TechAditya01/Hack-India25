@@ -34,10 +34,21 @@ def init_db():
     conn = get_db_connection()
     try:
         with conn.cursor() as cur:
+            # Create emails table
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS emails (
                     id SERIAL PRIMARY KEY,
                     email VARCHAR(255) NOT NULL UNIQUE,
+                    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                );
+            """)
+            
+            # Create chat_messages table
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS chat_messages (
+                    id SERIAL PRIMARY KEY,
+                    user_message TEXT NOT NULL,
+                    ai_response TEXT NOT NULL,
                     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
                 );
             """)
@@ -62,8 +73,8 @@ app = FastAPI(
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins
-    allow_credentials=True,
+    allow_origins=["http://127.0.0.1:5504", "http://localhost:5504"],  # Add your local development URLs
+    allow_credentials=False,  # Set to False since we're not using credentials
     allow_methods=["*"],  # Allow all methods
     allow_headers=["*"],  # Allow all headers
     expose_headers=["*"]  # Expose all headers
@@ -156,93 +167,60 @@ Generate a complete Solidity smart contract based on the following requirements:
 
 {request.prompt}
 
-Please provide the response in the following JSON format:
-{{
-    "message": "# Contract Overview\\n\\n## Description\\n[Provide a clear description of the contract's purpose and functionality]\\n\\n## Key Features\\n- [Feature 1]\\n- [Feature 2]\\n\\n## Security Considerations\\n- [Security point 1]\\n- [Security point 2]\\n\\n## Gas Optimizations\\n- [Optimization 1]\\n- [Optimization 2]\\n\\n## Usage Instructions\\n1. [Step 1]\\n2. [Step 2]\\n\\n## Important Notes\\n> [Any important warnings or considerations]\\n\\n## Technical Details\\n- Solidity Version: [version]\\n- License: MIT\\n- Dependencies: [list any dependencies]\\n\\n## Contract Code\\n```solidity\\n[The complete Solidity contract code here]\\n```",
-    "metadata": {{
-        "contract_type": "The type of contract (e.g., ERC20, ERC721, etc.)",
-        "solidity_version": "The Solidity version used",
-        "security_features": ["List of security features implemented"],
-        "gas_optimizations": ["List of gas optimizations used"],
-        "events": ["List of events defined"],
-        "functions": ["List of main functions"]
-    }}
-}}
+Format your response in clean markdown with:
+- Clear headings for each section
+- Code blocks with proper syntax highlighting
+- Bullet points for features and considerations
+- Proper spacing between sections
 
-Requirements for the contract:
-1. Use the latest Solidity version (^0.8.0)
-2. Include proper NatSpec comments
-3. Implement all necessary security checks
-4. Use gas optimization techniques
-5. Include events for important state changes
-6. Add input validation
-7. Handle edge cases
-8. Include proper error messages
-9. Use safe math operations
-10. Follow Solidity best practices
-
-The code should be production-ready and well-documented."""
+Include:
+1. Contract Overview
+2. Description
+3. Key Features
+4. Security Considerations
+5. Technical Details
+6. Contract Code (in a solidity code block)
+"""
         else:
             # Create a conversational prompt for general questions
             prompt = f"""You are Coffee-coders.ai, an AI assistant specializing in blockchain and smart contract development. 
-Answer the following question in a conversational and helpful way.
-
-Please provide the response in the following JSON format:
-{{
-    "message": "# Response\\n\\n## Overview\\n[Provide a brief overview of the answer]\\n\\n## Details\\n[Provide detailed explanation with proper markdown formatting]\\n\\n## Key Points\\n- [Point 1]\\n- [Point 2]\\n\\n## Additional Information\\n[Any additional relevant information]\\n\\n## Related Topics\\n- [Related topic 1]\\n- [Related topic 2]",
-    "metadata": {{
-        "response_type": "general",
-        "topic": "The main topic of the question",
-        "complexity": "The complexity level of the answer"
-    }}
-}}
+Answer the following question in a clear, well-structured format.
 
 Question: {request.prompt}
 
-If the question is about smart contracts or blockchain development, provide technical but accessible explanations.
-If it's a general greeting or question, respond naturally without using code formatting.
+Format your response in clean markdown with:
+- Clear headings for each section
+- Code blocks with proper syntax highlighting
+- Bullet points for key information
+- Proper spacing between sections
 
-Use proper markdown formatting including:
-- Headers (##, ###)
-- Lists (- or 1.)
-- Code blocks (```)
-- Blockquotes (>)
-- Bold (**) and italic (*) text
-- Tables when appropriate
-- Links when referencing external resources"""
+Do not include any JSON formatting or metadata in your response."""
 
         logger.info("Generating response using Gemini...")
         # Generate response using Gemini
         response = model.generate_content(prompt)
         logger.info("Successfully generated response from Gemini")
         
-        # Parse the response text as JSON
+        # Store the chat message in the database
+        conn = get_db_connection()
         try:
-            import json
-            response_data = json.loads(response.text)
-        except json.JSONDecodeError:
-            # If the response is not valid JSON, wrap it in our standard format
-            response_data = {
-                "message": response.text,
-                "metadata": {
-                    "response_type": "general",
-                    "generated_at": datetime.now().isoformat(),
-                    "model": "gemini-1.5-pro",
-                    "version": "1.0.0"
-                }
-            }
-        
-        # Add common metadata
-        response_data["metadata"].update({
-            "generated_at": datetime.now().isoformat(),
-            "model": "gemini-1.5-pro",
-            "version": "1.0.0"
-        })
+            with conn.cursor() as cur:
+                cur.execute(
+                    "INSERT INTO chat_messages (user_message, ai_response) VALUES (%s, %s)",
+                    (request.prompt, response.text)
+                )
+            conn.commit()
+        except Exception as e:
+            logger.error(f"Error storing chat message: {str(e)}")
+        finally:
+            conn.close()
         
         return ChatResponse(
             success=True,
             message="Response generated successfully",
-            data=response_data
+            data={
+                "message": response.text
+            }
         )
 
     except Exception as e:

@@ -96,26 +96,10 @@
     
     if (type === 'ai') {
       try {
-        // If content is a string containing JSON, parse it and extract only the message
-        if (typeof content === 'string') {
-          try {
-            const jsonContent = JSON.parse(content);
-            if (jsonContent.message) {
-              content = jsonContent.message;
-            }
-          } catch (e) {
-            // If parsing fails, use the content as is
-            console.log('Content is not JSON, using as is');
-          }
-        } else if (content.message) {
-          // If content is already an object with message property
-          content = content.message;
-        }
-        
         // Use marked library to render markdown
         messageContent.innerHTML = marked.parse(content);
       } catch (error) {
-        console.error('Error parsing content:', error);
+        console.error('Error parsing markdown:', error);
         messageContent.textContent = content;
       }
     } else {
@@ -148,41 +132,53 @@
       const response = await fetch(`${API_URL}/api/chat`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
         },
+        mode: 'cors',
         body: JSON.stringify({ prompt: message })
       });
       
       console.log('Response status:', response.status);
-      let data;
       try {
         const text = await response.text();
         console.log('Raw response:', text);
         
-        // First parse the outer JSON
-        const outerData = JSON.parse(text);
+        // Parse the response
+        const data = JSON.parse(text);
         
-        // Extract the inner JSON string from data.message
-        const innerJsonMatch = outerData.data.message.match(/```json\n([\s\S]*?)\n```/);
-        if (innerJsonMatch && innerJsonMatch[1]) {
-          // Parse the inner JSON
-          const innerData = JSON.parse(innerJsonMatch[1]);
-          
-          // Get the actual message content
-          const messageContent = innerData.message
-            .replace(/\\n/g, '\n')
-            .replace(/\\"/g, '"')
-            .replace(/\\\\/g, '\\')
-            // Remove the header section
-            .replace(/^# Response\s*## Overview\s*/g, '')
-            // Remove the Related Topics section
-            .replace(/\s*## Related Topics[\s\S]*$/, '')
-            // Clean up any extra newlines
-            .trim();
+        if (response.ok && data.data && data.data.message) {
+          // Extract the inner JSON string from data.message
+          const innerJsonMatch = data.data.message.match(/```json\n([\s\S]*?)\n```/);
+          if (innerJsonMatch && innerJsonMatch[1]) {
+            // Parse the inner JSON
+            const innerData = JSON.parse(innerJsonMatch[1]);
             
-          addMessage(messageContent, 'ai');
+            // Get just the message content without metadata
+            if (innerData.message) {
+              // Remove the Response and Overview headers
+              const cleanedMessage = innerData.message
+                .replace(/^# Response\s*\n+## Overview\s*\n+/i, '')
+                .replace(/\s*## Related Topics[\s\S]*$/, '')
+                .trim();
+              
+              // Configure marked for better code formatting
+              marked.setOptions({
+                highlight: function(code, language) {
+                  if (language && hljs.getLanguage(language)) {
+                    return hljs.highlight(code, { language: language }).value;
+                  }
+                  return hljs.highlightAuto(code).value;
+                },
+                breaks: true,
+                gfm: true
+              });
+              
+              addMessage(cleanedMessage, 'ai');
+            }
+          }
         } else {
-          console.error('Could not extract inner message from response');
+          console.error('Invalid response format:', data);
           addMessage('Sorry, I encountered an error. Please try again.', 'error');
         }
       } catch (error) {
