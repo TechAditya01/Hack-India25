@@ -33,8 +33,10 @@
         const response = await fetch(`${API_URL}/api/subscribe`, {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
           },
+          mode: 'cors',
           body: JSON.stringify({ email })
         });
 
@@ -59,11 +61,15 @@
             statusText: response.statusText,
             data: data
           });
-          alert(data.error || 'Something went wrong. Please try again.');
+          alert(data.error || 'Server error. Please try again later.');
         }
       } catch (error) {
         console.error('Error submitting email:', error);
-        alert('Failed to submit email. Please try again later.');
+        if (error.message === 'Failed to fetch') {
+          alert('Unable to connect to server. Please check your internet connection and try again later.');
+        } else {
+          alert('Failed to submit email. Please try again later.');
+        }
       }
     });
 
@@ -128,6 +134,10 @@
     
     try {
       console.log('Sending message to:', `${API_URL}/api/chat`);
+      // Show loading message
+      const loadingId = Date.now();
+      addMessage('Generating response...', 'system');
+      
       // Send message to backend
       const response = await fetch(`${API_URL}/api/chat`, {
         method: 'POST',
@@ -140,6 +150,17 @@
       });
       
       console.log('Response status:', response.status);
+      
+      // Remove loading message
+      const loadingMessage = document.querySelector('.system-message:last-child');
+      if (loadingMessage) {
+        loadingMessage.remove();
+      }
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
       try {
         const text = await response.text();
         console.log('Raw response:', text);
@@ -147,7 +168,7 @@
         // Parse the response
         const data = JSON.parse(text);
         
-        if (response.ok && data.data && data.data.message) {
+        if (data.data && data.data.message) {
           // Extract the inner JSON string from data.message
           const innerJsonMatch = data.data.message.match(/```json\n([\s\S]*?)\n```/);
           if (innerJsonMatch && innerJsonMatch[1]) {
@@ -175,19 +196,27 @@
               });
               
               addMessage(cleanedMessage, 'ai');
+            } else {
+              throw new Error('No message content in response');
             }
+          } else {
+            // If no JSON wrapper, use the message directly
+            addMessage(data.data.message, 'ai');
           }
         } else {
-          console.error('Invalid response format:', data);
-          addMessage('Sorry, I encountered an error. Please try again.', 'error');
+          throw new Error('Invalid response format');
         }
       } catch (error) {
         console.error('Error handling response:', error);
-        addMessage('Sorry, I encountered an error. Please try again.', 'error');
+        addMessage('I apologize, but I encountered an error processing the response. Please try again.', 'error');
       }
     } catch (error) {
       console.error('Error sending message:', error);
-      addMessage('Sorry, I encountered an error. Please try again.', 'error');
+      if (error.message === 'Failed to fetch') {
+        addMessage('Unable to connect to the server. Please check your internet connection and try again.', 'error');
+      } else {
+        addMessage('I apologize, but something went wrong. Please try again.', 'error');
+      }
     }
   }
   
@@ -271,17 +300,19 @@
   }
   
   
-  // Add event listeners for chat input
+  // Add event listeners for chat functionality
   const chatInput = document.getElementById('chatInput');
   const sendButton = document.querySelector('.chat-send-button');
-  
+
   if (chatInput && sendButton) {
-    // Send on button click
-    sendButton.addEventListener('click', sendMessage);
-    
-    // Send on Enter key
+    // Send message when clicking the send button
+    sendButton.addEventListener('click', function() {
+      sendMessage();
+    });
+
+    // Send message when pressing Enter in the input field
     chatInput.addEventListener('keypress', function(e) {
-      if (e.key === 'Enter' && !e.shiftKey) {
+      if (e.key === 'Enter') {
         e.preventDefault();
         sendMessage();
       }
