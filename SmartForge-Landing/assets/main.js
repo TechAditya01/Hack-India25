@@ -128,6 +128,9 @@
     const message = chatInput.value.trim();
     if (!message) return;
     
+    // Get wallet information
+    const walletInfo = await walletConnector.getWalletInfo();
+    
     // Add user message to chat
     addMessage(message, 'user');
     chatInput.value = '';
@@ -138,7 +141,16 @@
       const loadingId = Date.now();
       addMessage('Generating response...', 'system');
       
-      // Send message to backend
+      // Create context object with wallet information
+      const context = {
+        walletConnected: walletInfo !== null,
+        walletType: walletInfo?.type || null,
+        walletAddress: walletInfo?.address || null,
+        walletBalance: walletInfo?.balance || null,
+        walletCurrency: walletInfo?.currency || null
+      };
+      
+      // Send message to backend with wallet context
       const response = await fetch(`${API_URL}/api/chat`, {
         method: 'POST',
         headers: {
@@ -146,7 +158,10 @@
           'Accept': 'application/json'
         },
         mode: 'cors',
-        body: JSON.stringify({ prompt: message })
+        body: JSON.stringify({
+          prompt: message,
+          context: context
+        })
       });
       
       console.log('Response status:', response.status);
@@ -169,40 +184,45 @@
         const data = JSON.parse(text);
         
         if (data.data && data.data.message) {
-          // Extract the inner JSON string from data.message
+          let finalMessage = '';
+          
+          // Add wallet information if connected
+          if (walletInfo) {
+            finalMessage += `**Connected Wallet Info:**\n`;
+            finalMessage += `- Type: ${walletInfo.type === 'metamask' ? 'MetaMask (Ethereum)' : 'Phantom (Solana)'}\n`;
+            finalMessage += `- Address: \`${walletInfo.address}\`\n`;
+            finalMessage += `- Balance: ${walletInfo.balance} ${walletInfo.currency}\n\n`;
+          }
+          
+          // Add the AI response
           const innerJsonMatch = data.data.message.match(/```json\n([\s\S]*?)\n```/);
           if (innerJsonMatch && innerJsonMatch[1]) {
-            // Parse the inner JSON
             const innerData = JSON.parse(innerJsonMatch[1]);
-            
-            // Get just the message content without metadata
             if (innerData.message) {
-              // Remove the Response and Overview headers
               const cleanedMessage = innerData.message
                 .replace(/^# Response\s*\n+## Overview\s*\n+/i, '')
                 .replace(/\s*## Related Topics[\s\S]*$/, '')
                 .trim();
               
-              // Configure marked for better code formatting
-              marked.setOptions({
-                highlight: function(code, language) {
-                  if (language && hljs.getLanguage(language)) {
-                    return hljs.highlight(code, { language: language }).value;
-                  }
-                  return hljs.highlightAuto(code).value;
-                },
-                breaks: true,
-                gfm: true
-              });
-              
-              addMessage(cleanedMessage, 'ai');
-            } else {
-              throw new Error('No message content in response');
+              finalMessage += cleanedMessage;
             }
           } else {
-            // If no JSON wrapper, use the message directly
-            addMessage(data.data.message, 'ai');
+            finalMessage += data.data.message;
           }
+          
+          // Configure marked for better code formatting
+          marked.setOptions({
+            highlight: function(code, language) {
+              if (language && hljs.getLanguage(language)) {
+                return hljs.highlight(code, { language: language }).value;
+              }
+              return hljs.highlightAuto(code).value;
+            },
+            breaks: true,
+            gfm: true
+          });
+          
+          addMessage(finalMessage, 'ai');
         } else {
           throw new Error('Invalid response format');
         }
@@ -325,6 +345,45 @@
       this.connectedWallet = null;
       this.walletType = null;
       this.provider = null;
+      this.balance = null;
+    }
+
+    async getBalance() {
+      try {
+        if (!this.isConnected()) return null;
+
+        if (this.walletType === 'metamask') {
+          const balance = await this.provider.request({
+            method: 'eth_getBalance',
+            params: [this.connectedWallet, 'latest']
+          });
+          // Convert from wei to ETH
+          const ethBalance = parseInt(balance, 16) / Math.pow(10, 18);
+          this.balance = ethBalance.toFixed(4);
+          return this.balance;
+        } else if (this.walletType === 'phantom') {
+          const balance = await this.provider.connection.getBalance(this.provider.publicKey);
+          // Convert from lamports to SOL
+          const solBalance = balance / Math.pow(10, 9);
+          this.balance = solBalance.toFixed(4);
+          return this.balance;
+        }
+      } catch (error) {
+        console.error('Error getting balance:', error);
+        return null;
+      }
+    }
+
+    async getWalletInfo() {
+      if (!this.isConnected()) return null;
+
+      const balance = await this.getBalance();
+      return {
+        address: this.connectedWallet,
+        type: this.walletType,
+        balance: balance,
+        currency: this.walletType === 'metamask' ? 'ETH' : 'SOL'
+      };
     }
 
     async connectMetaMask() {
@@ -453,13 +512,19 @@
 
   // Update UI based on wallet connection
   function updateWalletUI(walletInfo = null) {
-    const connectWalletButton = document.querySelector('.cta-button');
-    if (!connectWalletButton) return;
+    const connectWalletButton = document.querySelector('.wallet-button');
+    if (!connectWalletButton) {
+      console.error('Wallet button not found');
+      return;
+    }
 
-    if (walletInfo && walletInfo.account) {
-      // Show connected state with wallet type indicator
-      const shortAddress = `${walletInfo.account.slice(0, 6)}...${walletInfo.account.slice(-4)}`;
-      const walletIcon = walletInfo.type === 'metamask' ? '🦊' : '👻';
+    if (walletInfo && (walletInfo.account || walletInfo.address)) {
+      // Get the address from either account or address field
+      const address = walletInfo.account || walletInfo.address;
+      const shortAddress = `${address.slice(0, 6)}...${address.slice(-4)}`;
+      const walletType = walletInfo.type;
+      const walletIcon = walletType === 'metamask' ? '🦊' : '👻';
+      
       connectWalletButton.innerHTML = `
         <span>${walletIcon} ${shortAddress}</span>
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -467,9 +532,9 @@
         </svg>
       `;
       connectWalletButton.classList.add('connected');
-      connectWalletButton.classList.add(walletInfo.type);
+      connectWalletButton.classList.add(walletType);
+      connectWalletButton.setAttribute('data-connected', 'true');
     } else {
-      // Show connect state
       connectWalletButton.innerHTML = `
         Connect Wallet
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -478,6 +543,7 @@
       `;
       connectWalletButton.classList.remove('connected');
       connectWalletButton.classList.remove('metamask', 'phantom');
+      connectWalletButton.removeAttribute('data-connected');
     }
   }
 
@@ -515,7 +581,8 @@
       }
       
       if (result && result.success) {
-        updateWalletUI(result);
+        const walletInfo = await walletConnector.getWalletInfo();
+        updateWalletUI(walletInfo);
         // Close modal after successful connection
         const modal = document.querySelector('.wallet-modal');
         if (modal) {
@@ -528,8 +595,17 @@
   }
 
   // Connect wallet button
-  const connectWalletButton = document.querySelector('.cta-button');
+  const connectWalletButton = document.querySelector('.cta-button, .connect-wallet-button');
   if (connectWalletButton) {
+    // Add wallet-button class and update initial state
+    connectWalletButton.classList.add('wallet-button');
+    
+    // Check if wallet is already connected and update UI accordingly
+    if (walletConnector.isConnected()) {
+      const walletInfo = walletConnector.getConnectedAccount();
+      updateWalletUI(walletInfo);
+    }
+    
     connectWalletButton.addEventListener('click', function() {
       if (walletConnector.isConnected()) {
         // If wallet is connected, show disconnect option

@@ -921,3 +921,67 @@ body {
 .wallet-modal-content {
   animation: walletConnected 0.3s ease-out;
 }
+
+/* Wallet button styles */
+.wallet-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius);
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition);
+  background-color: var(--primary);
+  color: var(--white);
+  border: 1px solid transparent;
+}
+
+.wallet-button:hover {
+  background-color: var(--primary-dark);
+}
+
+/* Connected state styles */
+.wallet-button.connected {
+  background-color: var(--dark-card);
+  border: 1px solid;
+  font-size: 0.875rem;
+}
+
+.wallet-button.connected.metamask {
+  border-color: #F6851B;
+  color: #F6851B;
+}
+
+.wallet-button.connected.phantom {
+  border-color: #AB9FF2;
+  color: #AB9FF2;
+}
+
+.wallet-button.connected:hover {
+  background-color: var(--dark-lighter);
+}
+
+.wallet-button.connected span {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: 'Fira Code', monospace;
+}
+
+.wallet-button svg {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
+}
+
+/* Add these classes to support both button types */
+.cta-button,
+.connect-wallet-button {
+  composes: wallet-button;
+}
+
+[data-connected="true"] {
+  background-color: var(--dark-card) !important;
+}
