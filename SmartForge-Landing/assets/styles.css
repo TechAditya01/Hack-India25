@@ -826,21 +826,30 @@ body {
   width: 32px;
   height: 32px;
   object-fit: contain;
-  border-radius: 6px;
-  background-color: transparent;
+  border-radius: 8px;
 }
 
 .wallet-option.metamask img {
   width: 36px;
   height: 36px;
+  padding: 0;
+  background: transparent;
 }
 
 .wallet-option.phantom img {
   width: 32px;
   height: 32px;
-  padding: 2px;
-  background: white;
+  padding: 0;
+  background: transparent;
   border-radius: 8px;
+}
+
+.wallet-option.phantom:hover {
+  border-color: #AB9FF2;
+}
+
+.wallet-option.metamask:hover {
+  border-color: #F6851B;
 }
 
 .wallet-option span {
@@ -848,7 +857,6 @@ body {
   font-size: 1rem;
   font-weight: 500;
   flex-grow: 1;
-  text-align: left;
 }
 
 .close-modal {
@@ -902,30 +910,6 @@ body {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-}
-
-/* Wallet option specific styles */
-.wallet-option.metamask:hover {
-  border-color: #F6851B;
-}
-
-.wallet-option.phantom:hover {
-  border-color: #AB9FF2;
-}
-
-.wallet-option.metamask img {
-  width: 36px;
-  height: 36px;
-  padding: 0;
-  background: transparent;
-}
-
-.wallet-option.phantom img {
-  width: 32px;
-  height: 32px;
-  padding: 2px;
-  background: white;
-  border-radius: 8px;
 }
 
 /* Animation for wallet connection */

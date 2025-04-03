@@ -490,11 +490,11 @@
         <h3>Connect Wallet</h3>
         <div class="wallet-options">
           <button class="wallet-option metamask">
-            <img src="assets/images/metamask.png" alt="MetaMask" onerror="this.src='https://cdn.iconscout.com/icon/free/png-256/metamask-2728406-2261817.png'">
+            <img src="/SmartForge-Landing/assets/images/metamask.svg" alt="MetaMask">
             <span>MetaMask</span>
           </button>
           <button class="wallet-option phantom">
-            <img src="assets/images/phantom.png" alt="Phantom" onerror="this.src='https://www.gitbook.com/cdn-cgi/image/width=40,dpr=2,height=40,fit=contain,format=auto/https%3A%2F%2F1370435015-files.gitbook.io%2F~%2Ffiles%2Fv0%2Fb%2Fgitbook-x-prod.appspot.com%2Fo%2Fspaces%252FvqQQWL1nXDqQyEcCKYYh%252Ficon%252FLRkYqjyevwXZpJ0QNO5n%252FPhantom%2520icon%2520dark%2520background.png%3Falt%3Dmedia%26token%3D0b7f5e36-1c11-44bc-aeec-7c83d6db3ed8'">
+            <img src="/SmartForge-Landing/assets/images/phantom.svg" alt="Phantom">
             <span>Phantom</span>
           </button>
         </div>
